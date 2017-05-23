@@ -44,19 +44,60 @@ var date_sort = function (d1, d2) {
 
 var formatComma = d3.format(",");
 
+function checkIntData(d){
+    return (isNaN(parseInt(d)) || parseInt(d)<0) ? 0 : parseInt(d);
+}
 
-function generateCharts(targetData){
+function generateCharts(targetData, progressData){
     var cf = crossfilter(targetData);
+    var progresscf = crossfilter(progressData);
+
+    //fix inconsistencies in data
+    targetData.forEach(function(d){
+        d['#indicator'] = d['#indicator'].toString().replace(/(\r\n|\n|\r)/gm,'');
+        d['#indicator'] = d['#indicator'].replace(/^ /, '');
+    });
+    progressData.forEach(function(d){
+        d['#value'] = checkIntData(d['#value']);
+    });
+
     var indicatorDim = cf.dimension(function(d) { return d['#indicator']; });
     var groupByIndicator = indicatorDim.group().reduceSum(function(d){return d['#targeted']; }).all();
+
+    var progressIndicatorDim = progresscf.dimension(function(d) { return d['#indicator']; });
+    var progressGroupByIndicator = progressIndicatorDim.group().reduceSum(function(d){return d['#value']; }).all();
+
+    for (var i=0; i<groupByIndicator.length; i++) {
+        // var indicator = indicatorDim.filter(groupByIndicator[i].key).top(Infinity);
+        // var progressIndicator = progressIndicatorDim.filter(groupByIndicator[i].key).top(Infinity);
+        var reached = 0;
+        //there is probably a better way to do this
+        for (var j=0; j<progressGroupByIndicator.length; j++) {
+            if (groupByIndicator[i].key == progressGroupByIndicator[j].key) {
+                reached = progressGroupByIndicator[j].value;
+                break;
+            }
+        }
+        $('.graphs').append('<div class="col-md-4" id="graph'+ i +'"><h3>'+ groupByIndicator[i].key +'</h3><span class="num">'+ formatComma(groupByIndicator[i].value) +'</span> targeted<br><span class="num">'+ formatComma(reached) +'</span> reached</div>');
+    }
+}
+
+function generateProgressCharts(progressData){
+    var cf = crossfilter(progressData);
+
+    progressData.forEach(function(d){
+        d['#value'] = checkIntData(d['#value']);
+    });
+
+    var indicatorDim = cf.dimension(function(d) { return d['#indicator']; });
+    var groupByIndicator = indicatorDim.group().reduceSum(function(d){return d['#value']; }).all();
     var indicatorArray = [];
     for (var i=0; i<groupByIndicator.length; i++) {
         var indicator = indicatorDim.filter(groupByIndicator[i].key).top(Infinity);
         indicatorArray.push(indicator);
-        $('.graphs').append('<div class="col-md-4" id="graph'+ i +'"><h3>'+ groupByIndicator[i].key +'</h3><span class="num">'+ formatComma(groupByIndicator[i].value) +'</span> targeted</div>');
+        $('.graphs').append('<div class="col-md-4" id="graph'+ i +'"><h3>'+ groupByIndicator[i].key +'</h3><span class="num">'+ formatComma(groupByIndicator[i].value) +'</span> reached</div>');
     }
 }
-
 
 var targetCall = $.ajax({ 
     type: 'GET', 
@@ -70,12 +111,8 @@ var progressCall = $.ajax({
     dataType: 'json',
 });
 
-$.when(targetCall).then(function(targetArgs){
-    var targetData = parseDates(['#date+year'],(hxlProxyToJSON(targetArgs)));
-    generateCharts(targetData);
-});
-
-$.when(progressCall).then(function(progressArgs){
-    var progressData = parseDates(['#date+year'],(hxlProxyToJSON(progressArgs)));
-    //generateProgressChart(progressData);
+$.when(targetCall, progressCall).then(function(targetArgs, progressArgs){
+    var targetData = parseDates(['#date+year'],(hxlProxyToJSON(targetArgs[0])));
+    var progressData = parseDates(['#date+year'],(hxlProxyToJSON(progressArgs[0])));
+    generateCharts(targetData, progressData);
 });
