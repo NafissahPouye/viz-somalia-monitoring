@@ -41,6 +41,11 @@ span.num{
 
 }
 
+#map {
+	border: 1px solid #ccc;
+	margin-bottom: 10px;
+}
+
 @media (min-width: 768px){
 
 }

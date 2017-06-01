@@ -27,10 +27,10 @@ function hxlProxyToJSON(input){
 }
 
 function parseDates(tag1,tag2,data){
-    //create date object with month and year data and store obj in month column for now
+    //create date object with month and year data and store obj in year column for now
     data.forEach(function(d){
         var date = new Date(Date.parse(d[tag1] + ' 1, ' + d[tag2]));
-        d[tag1] = date;
+        d[tag2] = date;
     });
     return data;
 }
@@ -40,8 +40,8 @@ function checkIntData(d){
 }
 
 var date_sort = function (d1, d2) {
-    if (d1['#date+month'] > d2['#date+month']) return 1;
-    if (d1['#date+month'] < d2['#date+month']) return -1;
+    if (d1['#date+year'] > d2['#date+year']) return 1;
+    if (d1['#date+year'] < d2['#date+year']) return -1;
     return 0;
 };
 
@@ -53,9 +53,9 @@ function generateCharts(targetData, progressData){
     var progresscf = crossfilter(progressData);
 
     //fix inconsistencies in data (remove newlines and spaces)
-    targetData.forEach(function(d){
-        d['#indicator'] = d['#indicator'].toString().replace(/(\r\n|\n|\r)/gm,'').replace(/^ /, '');
-    });
+    // targetData.forEach(function(d){
+    //     d['#indicator'] = d['#indicator'].toString().replace(/(\r\n|\n|\r)/gm,'').replace(/^ /, '');
+    // });
     progressData.forEach(function(d){
         d['#value'] = checkIntData(d['#value']);
     });
@@ -72,28 +72,31 @@ function generateCharts(targetData, progressData){
         //create data structure for bar charts
         var indicatorArr = progressIndicatorDim.filter(targetGroupByIndicator[i].key).top(Infinity).sort(date_sort);
         var dateArray = ['x'];
-        var valueArray = ['Reached'];
+        var valueReachedArray = ['Reached'];
+        var valueTargetArray = ['Target',targetGroupByIndicator[i].value];
         var lastDate = new Date();
         var total = 0;
         var first = true;
         var sector = '';
         indicatorArr.forEach(function(value, index) {
             if (first) {
-                lastDate = value['#date+month'];
+                lastDate = value['#date+year'];
                 dateArray.push(lastDate);
                 first = false;
             }
-            if (value['#date+month'].getTime() != lastDate.getTime()) {
+            if (value['#date+year'].getTime() != lastDate.getTime()) {
                 sector = value['#sector'],value['#indicator'];
-                lastDate = value['#date+month'];
-                valueArray.push(total);
+                lastDate = value['#date+year'];
+                valueReachedArray.push(total);
+                valueTargetArray.push(targetGroupByIndicator[i].value);
                 dateArray.push(lastDate);
                 total = 0;
             }
             total += value['#value'];
         });
         //add last total to array
-        valueArray.push(total);
+        valueReachedArray.push(total);
+        valueTargetArray.push(targetGroupByIndicator[i].value);
 
         //create key stats
         var reached = 0;
@@ -113,8 +116,11 @@ function generateCharts(targetData, progressData){
                 size: { height: 200 },
                 data: {
                     x: 'x',
-                    columns: [ dateArray, valueArray ],
-                    type: 'bar'
+                    columns: [ dateArray, valueReachedArray, valueTargetArray ],
+                    type: 'bar',
+                    types: {
+                        Target: 'line'
+                    }
                 },
                 axis: {
                     x: {
@@ -138,6 +144,54 @@ function generateCharts(targetData, progressData){
     }
 }
 
+function generateMap(adm1){
+    var width = $('#map').width();
+    var height = 400;
+    //map.zoom = d3.behavior.zoom().scaleExtent([1, 8]).on('zoom', map.zoomMap);
+    map.svg = d3.select('#map').append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        //.call(map.zoom);
+
+    map.projection = d3.geo.mercator()
+        .center([50, 5])
+        .scale(width*1.8)
+        .translate([width / 2, height / 2]);    
+
+    // var g = map.svg.append('g');
+
+    // g.selectAll('path')
+    //     .data(countries.features).enter()
+    //     .append('path')
+    //     .attr('d', d3.geo.path().projection(map.projection))
+    //     .attr('class','country')
+    //     .attr('fill', '#ffffff')
+    //     .attr('stroke-width',2)
+    //     .attr('stroke','#cccccc')
+    //     .attr('id',function(d){
+    //         return d.properties.NAME;
+    //     });
+
+    var g = map.svg.append('g').attr('id','adm1layer');
+    g.selectAll('path')
+        .data(adm1.features).enter()
+        .append('path')
+        .attr('d', d3.geo.path().projection(map.projection))
+        .attr('class','adm1')
+        .attr('fill', '#ffffff')
+        .attr('stroke-width',2)
+        .attr('stroke','#aaaaaa')
+        .attr('id',function(d){
+            return d.properties.admin1Name;
+        });
+}
+
+var adm1Call = $.ajax({ 
+    type: 'GET', 
+    url: 'data/som_adm1.json',
+    dataType: 'json',
+});
+
 var targetCall = $.ajax({ 
     type: 'GET', 
     url: 'https://proxy.hxlstandard.org/data.json?url=https%3A//docs.google.com/spreadsheets/d/1YmwfVaqZKKk2hTESkDfhi5RRlmXMAZ2j47PIS10Li_w/edit%23gid%3D935073182&strip-headers=on&force=on',
@@ -154,4 +208,9 @@ $.when(targetCall, progressCall).then(function(targetArgs, progressArgs){
     var targetData = hxlProxyToJSON(targetArgs[0]);
     var progressData = parseDates(['#date+month'],['#date+year'],(hxlProxyToJSON(progressArgs[0])));
     generateCharts(targetData, progressData);
+});
+
+$.when(targetCall, progressCall, adm1Call).then(function(targetArgs, progressArgs, adm1Args){
+    var adm1 = topojson.feature(adm1Args[0],adm1Args[0].objects.som_adm1);
+    generateMap(adm1);
 });
