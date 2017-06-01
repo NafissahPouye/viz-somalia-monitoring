@@ -20,7 +20,9 @@ h4{
 	font-size: 10px;
 }
 .graphs > div {
-	min-height: 420px;
+	border-bottom: 1px solid #ccc;
+	margin-bottom: 15px;
+	min-height: 410px;
 }
 .header {
 	min-height: 80px;
