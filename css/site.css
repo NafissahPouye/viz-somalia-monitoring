@@ -17,30 +17,28 @@ h4{
 	text-transform: uppercase;
 }
 .small{
-	font-size: 10px;
+	font-size: 12px;
 }
 .graphs > div {
 	border-bottom: 1px solid #ccc;
 	margin-bottom: 15px;
-	min-height: 410px;
+	min-height: 420px;
 }
 .header {
 	min-height: 80px;
 }
 .chart {
-	margin-top: 20px;
 }
 .text-center {
 	text-align: center;
+}
+.timespan {
+	margin-top: 20px;
 }
 
 span.num{
 	font-size: 24px;
 	font-weight: 700;
-}
-
-.chart {
-
 }
 
 #map {
