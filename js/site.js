@@ -62,24 +62,29 @@ function monthDiff(d1, d2) {
     return d2.getMonth() - d1.getMonth() + 1;
 }
 
-var formatComma = d3.format(',');
-
+var formatComma = d3.format('.2s');
+var targetcf, 
+    progresscf,
+    targetIndicatorDim,
+    progressIndicatorDim,
+    targetGroupByIndicator,
+    progressGroupByIndicator;
 
 function generateCharts(targetData, progressData){
-    var targetcf = crossfilter(targetData);
-    var progresscf = crossfilter(progressData);
+    targetcf = crossfilter(targetData);
+    progresscf = crossfilter(progressData);
 
     progressData.forEach(function(d){
         d['#value'] = checkIntData(d['#value']);
     });
 
     //get target and progress dimensions by indicator
-    var targetIndicatorDim = targetcf.dimension(function(d) { return d['#sector']+'|'+d['#indicator']; });
-    var progressIndicatorDim = progresscf.dimension(function(d) { return d['#indicator']; });
+    targetIndicatorDim = targetcf.dimension(function(d) { return d['#sector']+'|'+d['#indicator']; });
+    progressIndicatorDim = progresscf.dimension(function(d) { return d['#indicator']; });
 
     //get target and progress data values for key stats
-    var targetGroupByIndicator = targetIndicatorDim.group().reduceSum(function(d){return d['#targeted']; }).all();
-    var progressGroupByIndicator = progressIndicatorDim.group().reduceSum(function(d){return d['#value']; }).all();
+    targetGroupByIndicator = targetIndicatorDim.group().reduceSum(function(d){return d['#targeted']; }).all();
+    progressGroupByIndicator = progressIndicatorDim.group().reduceSum(function(d){return d['#value']; }).all();
 
     for (var i=0; i<targetGroupByIndicator.length; i++) {
         //create data structure for target line
@@ -99,6 +104,7 @@ function generateCharts(targetData, progressData){
         var lastDate = new Date();
         var total = 0;
         var first = true;
+        var reachedVal = 0;
         indicatorArr.forEach(function(value, index) {
             if (first) {
                 lastDate = value['#date+year'];
@@ -108,6 +114,7 @@ function generateCharts(targetData, progressData){
             if (value['#date+year'].getTime() != lastDate.getTime()) {
                 lastDate = value['#date+year'];
                 valueReachedArray.push(total);
+                reachedVal += Number(total);
                 valueTargetArray.push(targetGroupByIndicator[i].value);
                 dateArray.push(lastDate);
                 total = 0;
@@ -116,18 +123,11 @@ function generateCharts(targetData, progressData){
         });
         //add last total to array
         valueReachedArray.push(total);
+        reachedVal += Number(total);
         valueTargetArray.push(targetGroupByIndicator[i].value);
 
         //create key stats
-        var reached = 0;
-        //match progress values with targeted values -- there is probably a better way to do this
-        for (var j=0; j<progressGroupByIndicator.length; j++) {
-            if (currentIndicator == progressGroupByIndicator[j].key) {
-                reached = progressGroupByIndicator[j].value;
-                break;
-            }
-        }
-        $('.graphs').append('<div class="col-md-4"><div class="header"><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><span class="num">'+ formatComma(targetGroupByIndicator[i].value*targetSpan) +'</span> targeted <span class="small">(over ' + targetSpan + ' mths)</span><br><span class="num">'+ formatComma(reached) +'</span> reached<div class="timespan text-center small">(' + spanType + ')</div><div id="chart' + i + '" class="chart"></div></div>');
+        $('.graphs').append('<div class="col-md-4" id="indicator' + i + '"><div class="header"><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><span class="num targetNum">'+ formatComma(targetGroupByIndicator[i].value*targetSpan) +'</span> targeted <span class="small">(over ' + targetSpan + ' mths)</span><br><span class="num reachedNum">' + formatComma(reachedVal) + '</span> reached<div class="timespan text-center small">(' + spanType + ')</div><div id="chart' + i + '" class="chart"></div></div>');
 
         //create bar charts
         var chartType = (spanType.toLowerCase() == 'monthly') ? 'bar' : 'line';
@@ -171,15 +171,80 @@ function generateCharts(targetData, progressData){
                 right: 20
             }
         });
+
+        //store reference to chart
+        $('#chart'+i).data('chartObj', chart);
     }
 }
+
+function updateCharts(region) {
+    for (var i=0; i<targetGroupByIndicator.length; i++) {
+        //create data structure for target line
+        var currentIndicator = targetGroupByIndicator[i].key.split('|')[1];
+        var targetArr = targetIndicatorDim.filter(targetGroupByIndicator[i].key).top(Infinity);
+        var targetedVal = 0, 
+            startDate,
+            endDate;
+        targetArr.forEach(function(value, index) {
+            if (value['#adm1+name'] == region || region == '') {
+                targetedVal += Number(value['#targeted']);
+                startDate = new Date(value['#date+start+year']);
+                endDate = new Date(value['#date+end+year']);
+            }
+        });
+        var targetSpan = monthDiff(startDate, endDate);
+
+        //create data structure for bar charts
+        var indicatorArr = progressIndicatorDim.filter(currentIndicator).top(Infinity).sort(date_sort);
+        var dateArray = ['x'];
+        var valueReachedArray = ['Reached'];
+        var valueTargetArray = ['Target'];
+        var lastDate = new Date();
+        var total = 0;
+        var first = true;
+        var reachedVal = 0;
+        indicatorArr.forEach(function(value, index) {
+            if (indicatorArr[index]['#adm1+name'] == region || region == '') {
+                if (first) {
+                    lastDate = value['#date+year'];
+                    dateArray.push(lastDate);
+                    first = false;
+                }
+                if (value['#date+year'].getTime() != lastDate.getTime()) {
+                    lastDate = value['#date+year'];
+                    valueReachedArray.push(total);
+                    reachedVal += Number(total);
+                    valueTargetArray.push(targetedVal);
+                    dateArray.push(lastDate);
+                    total = 0;
+                }
+                total += value['#value'];
+            }
+        });
+        //add last total to array
+        valueReachedArray.push(total);
+        reachedVal += Number(total);
+        valueTargetArray.push(targetedVal);
+
+        //update key stats
+        $('#indicator'+i).find('.targetNum').html(formatComma(targetedVal*targetSpan));
+        $('#indicator'+i).find('.reachedNum').html(formatComma(reachedVal));
+
+        //update bar charts
+        var currentChart = $('#chart'+i).data('chartObj');
+        currentChart.load({
+            columns: [ dateArray, valueReachedArray, valueTargetArray ]
+        });
+    }
+}
+
 
 var mapsvg,
     centered;
 function generateMap(adm1){
     //remove loader and show map
     $('.sp-circle').remove();
-    $('#map').fadeIn();
+    $('.map-container').fadeIn();
 
     var width = $('#map').width();
     var height = 400;
@@ -194,29 +259,15 @@ function generateMap(adm1){
         .scale(width*2)
         .translate([width / 2, height / 2]);    
 
-    // var g = map.svg.append('g');
-
-    // g.selectAll('path')
-    //     .data(countries.features).enter()
-    //     .append('path')
-    //     .attr('d', d3.geo.path().projection(map.projection))
-    //     .attr('class','country')
-    //     .attr('fill', '#ffffff')
-    //     .attr('stroke-width',2)
-    //     .attr('stroke','#cccccc')
-    //     .attr('id',function(d){
-    //         return d.properties.NAME;
-    //     });
-
     var g = mapsvg.append('g').attr('id','adm1layer');
     var path = g.selectAll('path')
         .data(adm1.features).enter()
         .append('path')
         .attr('d', d3.geo.path().projection(mapprojection))
         .attr('class','adm1')
-        .attr('fill', '#ffffff')
-        .attr('stroke-width',2)
-        .attr('stroke','#aaaaaa')
+        .attr('fill', '#FFFFFF')
+        .attr('stroke-width', 2)
+        .attr('stroke','#AAAAAA')
         .attr('id',function(d){
             return d.properties.admin1Name;
         });
@@ -235,10 +286,24 @@ function generateMap(adm1){
             maptip.classed('hidden', true)
         })
         .on('click', function(d,i){
-            $(this).siblings().attr('fill', '#FFFFFF');
-            $(this).attr('fill', '#F2645A');
-            //centerMap(d);
+            selectRegion($(this), d.properties.admin1Name);
         }); 
+
+    $('.reset-btn').on('click', reset);
+}
+
+function selectRegion(region, name) {
+    region.siblings().attr('fill', '#FFFFFF');
+    region.attr('fill', '#F2645A');
+    $('.regionLabel > div > strong').html(name);
+    updateCharts(name);
+}
+
+function reset() {
+    $('#adm1layer').children().attr('fill', '#FFFFFF');
+    $('.regionLabel > div > strong').html('All Regions');
+    updateCharts('');
+    return false;
 }
 
 function centerMap(d) {
