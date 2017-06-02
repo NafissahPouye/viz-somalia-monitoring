@@ -16,6 +16,9 @@ h4{
 	margin-bottom: 5px;
 	text-transform: uppercase;
 }
+a {
+	text-decoration: underline;
+}
 .small{
 	font-size: 12px;
 }
@@ -37,9 +40,11 @@ span.num{
 	font-size: 24px;
 	font-weight: 700;
 }
+.map-container {
+	display: none;
+}
 #map {
 	border: 1px solid #ccc;
-	display: none;
 	margin-bottom: 10px;
 }
 .d3-tip {
@@ -52,4 +57,11 @@ span.num{
 }
 .map-tip{
   position: absolute;
+}
+.regionLabel {
+	position: absolute;
+	z-index: 2;
+	top: 20px;
+	right: 20px;
+	text-align: right;
 }
