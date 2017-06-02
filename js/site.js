@@ -180,6 +180,10 @@ function generateCharts(targetData, progressData){
 }
 
 function generateMap(adm1){
+    //remove loader and show map
+    $('.sp-circle').remove();
+    $('#map').fadeIn();
+
     var width = $('#map').width();
     var height = 400;
     //map.zoom = d3.behavior.zoom().scaleExtent([1, 8]).on('zoom', map.zoomMap);
