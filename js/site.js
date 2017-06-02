@@ -99,7 +99,6 @@ function generateCharts(targetData, progressData){
         var lastDate = new Date();
         var total = 0;
         var first = true;
-        var tval = (spanType.toLowerCase() == 'monthly') ? targetGroupByIndicator[i].value/targetSpan : targetGroupByIndicator[i].value;
         indicatorArr.forEach(function(value, index) {
             if (first) {
                 lastDate = value['#date+year'];
@@ -109,7 +108,7 @@ function generateCharts(targetData, progressData){
             if (value['#date+year'].getTime() != lastDate.getTime()) {
                 lastDate = value['#date+year'];
                 valueReachedArray.push(total);
-                valueTargetArray.push(tval);
+                valueTargetArray.push(targetGroupByIndicator[i].value);
                 dateArray.push(lastDate);
                 total = 0;
             }
@@ -117,7 +116,7 @@ function generateCharts(targetData, progressData){
         });
         //add last total to array
         valueReachedArray.push(total);
-        valueTargetArray.push(tval);
+        valueTargetArray.push(targetGroupByIndicator[i].value);
 
         //create key stats
         var reached = 0;
@@ -128,7 +127,7 @@ function generateCharts(targetData, progressData){
                 break;
             }
         }
-        $('.graphs').append('<div class="col-md-4"><div class="header"><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><span class="num">'+ formatComma(targetGroupByIndicator[i].value) +'</span> targeted <span class="small">(over ' + targetSpan + ' mths)</span><br><span class="num">'+ formatComma(reached) +'</span> reached<div class="timespan text-center small">(' + spanType + ')</div><div id="chart' + i + '" class="chart"></div></div>');
+        $('.graphs').append('<div class="col-md-4"><div class="header"><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><span class="num">'+ formatComma(targetGroupByIndicator[i].value*targetSpan) +'</span> targeted <span class="small">(over ' + targetSpan + ' mths)</span><br><span class="num">'+ formatComma(reached) +'</span> reached<div class="timespan text-center small">(' + spanType + ')</div><div id="chart' + i + '" class="chart"></div></div>');
 
         //create bar charts
         var chartType = (spanType.toLowerCase() == 'monthly') ? 'bar' : 'line';
