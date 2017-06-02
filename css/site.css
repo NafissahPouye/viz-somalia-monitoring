@@ -27,30 +27,18 @@ h4{
 .header {
 	min-height: 80px;
 }
-.chart {
-}
 .text-center {
 	text-align: center;
 }
 .timespan {
 	margin-top: 20px;
 }
-
 span.num{
 	font-size: 24px;
 	font-weight: 700;
 }
-
 #map {
 	border: 1px solid #ccc;
+	display: none;
 	margin-bottom: 10px;
 }
-
-@media (min-width: 768px){
-
-}
-
-@media (min-width: 992px){
-
-}
-
