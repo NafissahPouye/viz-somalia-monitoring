@@ -190,8 +190,8 @@ function generateMap(adm1){
         //.call(map.zoom);
 
     var mapprojection = d3.geo.mercator()
-        .center([50, 5])
-        .scale(width*1.8)
+        .center([48, 5])
+        .scale(width*2)
         .translate([width / 2, height / 2]);    
 
     // var g = map.svg.append('g');
