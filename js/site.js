@@ -69,10 +69,6 @@ function generateCharts(targetData, progressData){
     var targetcf = crossfilter(targetData);
     var progresscf = crossfilter(progressData);
 
-    //fix inconsistencies in data (remove newlines and spaces)
-    // targetData.forEach(function(d){
-    //     d['#indicator'] = d['#indicator'].toString().replace(/(\r\n|\n|\r)/gm,'').replace(/^ /, '');
-    // });
     progressData.forEach(function(d){
         d['#value'] = checkIntData(d['#value']);
     });
@@ -179,6 +175,8 @@ function generateCharts(targetData, progressData){
     }
 }
 
+var mapsvg,
+    centered;
 function generateMap(adm1){
     //remove loader and show map
     $('.sp-circle').remove();
@@ -187,12 +185,12 @@ function generateMap(adm1){
     var width = $('#map').width();
     var height = 400;
     //map.zoom = d3.behavior.zoom().scaleExtent([1, 8]).on('zoom', map.zoomMap);
-    map.svg = d3.select('#map').append('svg')
+    mapsvg = d3.select('#map').append('svg')
         .attr('width', width)
         .attr('height', height)
         //.call(map.zoom);
 
-    map.projection = d3.geo.mercator()
+    var mapprojection = d3.geo.mercator()
         .center([50, 5])
         .scale(width*1.8)
         .translate([width / 2, height / 2]);    
@@ -211,11 +209,11 @@ function generateMap(adm1){
     //         return d.properties.NAME;
     //     });
 
-    var g = map.svg.append('g').attr('id','adm1layer');
-    g.selectAll('path')
+    var g = mapsvg.append('g').attr('id','adm1layer');
+    var path = g.selectAll('path')
         .data(adm1.features).enter()
         .append('path')
-        .attr('d', d3.geo.path().projection(map.projection))
+        .attr('d', d3.geo.path().projection(mapprojection))
         .attr('class','adm1')
         .attr('fill', '#ffffff')
         .attr('stroke-width',2)
@@ -223,6 +221,46 @@ function generateMap(adm1){
         .attr('id',function(d){
             return d.properties.admin1Name;
         });
+
+    //map tooltips
+    var maptip = d3.select('#map').append('div').attr('class', 'd3-tip map-tip hidden');
+    path
+        .on('mousemove', function(d,i) {
+            var mouse = d3.mouse(mapsvg.node()).map( function(d) { return parseInt(d); } );
+            maptip
+                .classed('hidden', false)
+                .attr('style', 'left:'+(mouse[0]+20)+'px;top:'+(mouse[1]+20)+'px')
+                .html(d.properties.admin1Name)
+        })
+        .on('mouseout',  function(d,i) {
+            maptip.classed('hidden', true)
+        })
+        .on('click', function(d,i){
+            $(this).siblings().attr('fill', '#FFFFFF');
+            $(this).attr('fill', '#F2645A');
+            //centerMap(d);
+        }); 
+}
+
+function centerMap(d) {
+  var x = 0,
+      y = 0;
+
+  // If the click was on the centered state or the background, re-center.
+  // Otherwise, center the clicked-on state.
+  if (!d || centered === d) {
+    centered = null;
+  } else {
+    var centroid = path.centroid(d);
+    x = width / 2 - centroid[0];
+    y = height / 2 - centroid[1];
+    centered = d;
+  }
+
+  // Transition to the new transform.
+  g.transition()
+      .duration(750)
+      .attr("transform", "translate(" + x + "," + y + ")");
 }
 
 var adm1Call = $.ajax({ 
