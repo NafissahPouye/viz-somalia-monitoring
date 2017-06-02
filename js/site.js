@@ -58,12 +58,6 @@ var date_sort = function (d1, d2) {
     return 0;
 }
 
-var sector_sort = function (d1, d2) {
-    // if (d1['#date+year'] > d2['#date+year']) return 1;
-    // if (d1['#date+year'] < d2['#date+year']) return -1;
-    // return 0;
-}
-
 function monthDiff(d1, d2) {
     return d2.getMonth() - d1.getMonth() + 1;
 }
