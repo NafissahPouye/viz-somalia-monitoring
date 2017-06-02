@@ -74,32 +74,32 @@ function generateCharts(targetData, progressData){
     });
 
     //get target and progress dimensions by indicator
-    var targetIndicatorDim = targetcf.dimension(function(d) { return d['#indicator']; }); 
+    var targetIndicatorDim = targetcf.dimension(function(d) { return d['#sector']+'|'+d['#indicator']; });
     var progressIndicatorDim = progresscf.dimension(function(d) { return d['#indicator']; });
 
     //get target and progress data values for key stats
-    var targetGroupByIndicator = targetIndicatorDim.group().reduceSum(function(d){return d['#targeted']; }).top(Infinity);
-    var progressGroupByIndicator = progressIndicatorDim.group().reduceSum(function(d){return d['#value']; }).top(Infinity);
+    var targetGroupByIndicator = targetIndicatorDim.group().reduceSum(function(d){return d['#targeted']; }).all();
+    var progressGroupByIndicator = progressIndicatorDim.group().reduceSum(function(d){return d['#value']; }).all();
 
     for (var i=0; i<targetGroupByIndicator.length; i++) {
         //create data structure for target line
+        var currentSector = targetGroupByIndicator[i].key.split('|')[0];
+        var currentIndicator = targetGroupByIndicator[i].key.split('|')[1];
         var targetArr = targetIndicatorDim.filter(targetGroupByIndicator[i].key).top(Infinity);
         var startDate = new Date(targetArr[0]['#date+start+year']);
         var endDate = new Date(targetArr[0]['#date+end+year']);
+        var spanType = targetArr[0]['#meta+cumulative'];
         var targetSpan = monthDiff(startDate, endDate);
-        var monthly = targetArr[0]['#meta+monthly'];
-        var spanType = (monthly == 'TRUE') ? 'Monthly' : 'Cumulative';
 
         //create data structure for bar charts
-        var indicatorArr = progressIndicatorDim.filter(targetGroupByIndicator[i].key).top(Infinity).sort(date_sort);
+        var indicatorArr = progressIndicatorDim.filter(currentIndicator).top(Infinity).sort(date_sort);
         var dateArray = ['x'];
         var valueReachedArray = ['Reached'];
         var valueTargetArray = ['Target'];
         var lastDate = new Date();
         var total = 0;
         var first = true;
-        var sector = '';
-        var tval = (monthly == 'TRUE') ? targetGroupByIndicator[i].value/targetSpan : targetGroupByIndicator[i].value;
+        var tval = (spanType.toLowerCase() == 'monthly') ? targetGroupByIndicator[i].value/targetSpan : targetGroupByIndicator[i].value;
         indicatorArr.forEach(function(value, index) {
             if (first) {
                 lastDate = value['#date+year'];
@@ -107,7 +107,6 @@ function generateCharts(targetData, progressData){
                 first = false;
             }
             if (value['#date+year'].getTime() != lastDate.getTime()) {
-                sector = value['#sector'],value['#indicator'];
                 lastDate = value['#date+year'];
                 valueReachedArray.push(total);
                 valueTargetArray.push(tval);
@@ -124,15 +123,15 @@ function generateCharts(targetData, progressData){
         var reached = 0;
         //match progress values with targeted values -- there is probably a better way to do this
         for (var j=0; j<progressGroupByIndicator.length; j++) {
-            if (targetGroupByIndicator[i].key == progressGroupByIndicator[j].key) {
+            if (currentIndicator == progressGroupByIndicator[j].key) {
                 reached = progressGroupByIndicator[j].value;
                 break;
             }
         }
-        $('.graphs').append('<div class="col-md-4"><div class="header"><h4>' + sector + '</h4><h3>'+  targetGroupByIndicator[i].key +'</h3></div><span class="num">'+ formatComma(targetGroupByIndicator[i].value) +'</span> targeted <span class="small">(over ' + targetSpan + ' mths)</span><br><span class="num">'+ formatComma(reached) +'</span> reached<div class="timespan text-center small">(' + spanType + ')</div><div id="chart' + i + '" class="chart"></div></div>');
+        $('.graphs').append('<div class="col-md-4"><div class="header"><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><span class="num">'+ formatComma(targetGroupByIndicator[i].value) +'</span> targeted <span class="small">(over ' + targetSpan + ' mths)</span><br><span class="num">'+ formatComma(reached) +'</span> reached<div class="timespan text-center small">(' + spanType + ')</div><div id="chart' + i + '" class="chart"></div></div>');
 
         //create bar charts
-        var chartType = (monthly == 'TRUE') ? 'bar' : 'line';
+        var chartType = (spanType.toLowerCase() == 'monthly') ? 'bar' : 'line';
         var chart = c3.generate({
             bindto: '#chart'+i,
             size: { height: 200 },
