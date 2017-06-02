@@ -99,6 +99,7 @@ function generateCharts(targetData, progressData){
         var total = 0;
         var first = true;
         var sector = '';
+        var tval = (monthly == 'TRUE') ? targetGroupByIndicator[i].value/targetSpan : targetGroupByIndicator[i].value;
         indicatorArr.forEach(function(value, index) {
             if (first) {
                 lastDate = value['#date+year'];
@@ -109,7 +110,7 @@ function generateCharts(targetData, progressData){
                 sector = value['#sector'],value['#indicator'];
                 lastDate = value['#date+year'];
                 valueReachedArray.push(total);
-                valueTargetArray.push(targetGroupByIndicator[i].value/targetSpan);
+                valueTargetArray.push(tval);
                 dateArray.push(lastDate);
                 total = 0;
             }
@@ -117,7 +118,7 @@ function generateCharts(targetData, progressData){
         });
         //add last total to array
         valueReachedArray.push(total);
-        valueTargetArray.push(targetGroupByIndicator[i].value/targetSpan);
+        valueTargetArray.push(tval);
 
         //create key stats
         var reached = 0;
