@@ -171,6 +171,9 @@ function generateCharts(targetData, progressData){
                         bottom : 0
                     }
                 }
+            },
+            padding: {
+                right: 20
             }
         });
     }
