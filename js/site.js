@@ -165,8 +165,15 @@ function generateCharts(targetData, progressData){
                     tick: {
                         count: 5,
                         format: d3.format('.2s')
+                    },
+                    min: 0,
+                    padding : {
+                        bottom : 0
                     }
                 }
+            },
+            padding: {
+                right: 20
             }
         });
     }
