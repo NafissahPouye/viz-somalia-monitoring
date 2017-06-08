@@ -222,17 +222,19 @@ function updateCharts(region) {
             var total = 0;
             var first = true;
             targetArr.forEach(function(value, index) {
-                if (first) {
-                    lastDate = value['#date+start'];
-                    first = false;
+                if (targetArr[index]['#adm1+name'] == region || region == '') {
+                    if (first) {
+                        lastDate = value['#date+start'];
+                        first = false;
+                    }
+                    if (value['#date+start'].getTime() != lastDate.getTime()) {
+                        lastDate = value['#date+start'];
+                        valueTargetArray.push(total);
+                        targetVal += Number(total);
+                        total = 0;
+                    }
+                    total += value['#targeted'];
                 }
-                if (value['#date+start'].getTime() != lastDate.getTime()) {
-                    lastDate = value['#date+start'];
-                    valueTargetArray.push(total);
-                    targetVal += Number(total);
-                    total = 0;
-                }
-                total += value['#targeted'];
             });
             //add last total to array
             valueTargetArray.push(total);
