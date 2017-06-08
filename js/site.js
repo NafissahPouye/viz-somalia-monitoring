@@ -212,13 +212,43 @@ function updateCharts(region) {
                 endDate = new Date(value['#date+end']);
             }
         });
-        var targetSpan = monthDiff(startDate, endDate);
+        //var targetSpan = monthDiff(startDate, endDate);
 
-        //create data structure for bar charts
+        //get target values
+        var valueTargetArray = ['Target'];
+        var targetVal = 0;
+        if (targetArr[0]['#meta+monthly']=='TRUE') {
+            var lastDate = new Date();
+            var total = 0;
+            var first = true;
+            targetArr.forEach(function(value, index) {
+                if (first) {
+                    lastDate = value['#date+start'];
+                    first = false;
+                }
+                if (value['#date+start'].getTime() != lastDate.getTime()) {
+                    lastDate = value['#date+start'];
+                    valueTargetArray.push(total);
+                    targetVal += Number(total);
+                    total = 0;
+                }
+                total += value['#targeted'];
+            });
+            //add last total to array
+            valueTargetArray.push(total);
+            targetVal += Number(total);
+        }
+        else {
+            for (var j=0; j<mthDiff; j++) {
+                valueTargetArray.push(targetGroupByIndicator[i].value);
+                targetVal += Number(targetGroupByIndicator[i].value);
+            }
+        }
+
+        //get progress data
         var indicatorArr = progressIndicatorDim.filter(currentIndicator).top(Infinity).sort(date_sort);
         var dateArray = ['x'];
         var valueReachedArray = ['Reached'];
-        var valueTargetArray = ['Target'];
         var lastDate = new Date();
         var total = 0;
         var first = true;
@@ -234,7 +264,6 @@ function updateCharts(region) {
                     lastDate = value['#date'];
                     valueReachedArray.push(total);
                     reachedVal += Number(total);
-                    valueTargetArray.push(targetedVal);
                     dateArray.push(lastDate);
                     total = 0;
                 }
@@ -244,10 +273,9 @@ function updateCharts(region) {
         //add last total to array
         valueReachedArray.push(total);
         reachedVal += Number(total);
-        valueTargetArray.push(targetedVal);
 
         //update key stats
-        $('#indicator'+i).find('.targetNum').html(formatComma(targetedVal*targetSpan));
+        $('#indicator'+i).find('.targetNum').html(formatComma(targetedVal));
         $('#indicator'+i).find('.reachedNum').html(formatComma(reachedVal));
 
         //update bar charts
