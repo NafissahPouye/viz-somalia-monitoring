@@ -26,24 +26,12 @@ function hxlProxyToJSON(input){
     return output;
 }
 
-function parseDates(tag1,tag2,data){
-    //create date object with month and year data and store obj in year column for now
+function parseDates(tags,data){
+    var parseDateFormat = d3.time.format("%d-%m-%Y").parse;
     data.forEach(function(d){
-        var date = new Date(Date.parse(d[tag1] + ' 1, ' + d[tag2]));
-        d[tag2] = date;
-    });
-    return data;
-}
-
-function parseTargetDates(tag1,tag2,data){
-    //create date object with start and end data
-    data.forEach(function(d){
-        var start = d[tag1].split('-');
-        var end = d[tag2].split('-');
-        var startDate = new Date(start[2],start[1]-1,start[0]);
-        var endDate = new Date(end[2],end[1]-1,end[0]);
-        d[tag1] = startDate;
-        d[tag2] = endDate;
+        tags.forEach(function(t){
+            d[t] = parseDateFormat(d[t]);
+        });
     });
     return data;
 }
@@ -53,8 +41,14 @@ function checkIntData(d){
 }
 
 var date_sort = function (d1, d2) {
-    if (d1['#date+year'] > d2['#date+year']) return 1;
-    if (d1['#date+year'] < d2['#date+year']) return -1;
+    if (d1['#date'] > d2['#date']) return 1;
+    if (d1['#date'] < d2['#date']) return -1;
+    return 0;
+}
+
+var target_date_sort = function (d1, d2) {
+    if (d1['#date+start'] > d2['#date+start']) return 1;
+    if (d1['#date+start'] < d2['#date+start']) return -1;
     return 0;
 }
 
@@ -74,6 +68,10 @@ function generateCharts(targetData, progressData){
     targetcf = crossfilter(targetData);
     progresscf = crossfilter(progressData);
 
+    targetData.forEach(function(d){
+        d['#targeted'] = checkIntData(d['#targeted']);
+    });
+
     progressData.forEach(function(d){
         d['#value'] = checkIntData(d['#value']);
     });
@@ -90,32 +88,62 @@ function generateCharts(targetData, progressData){
         //create data structure for target line
         var currentSector = targetGroupByIndicator[i].key.split('|')[0];
         var currentIndicator = targetGroupByIndicator[i].key.split('|')[1];
-        var targetArr = targetIndicatorDim.filter(targetGroupByIndicator[i].key).top(Infinity);
-        var startDate = new Date(targetArr[0]['#date+start+year']);
-        var endDate = new Date(targetArr[0]['#date+end+year']);
-        var spanType = targetArr[0]['#meta+cumulative'];
-        var targetSpan = monthDiff(startDate, endDate);
+        var targetArr = targetIndicatorDim.filter(targetGroupByIndicator[i].key).top(Infinity).sort(target_date_sort);
+        var startDate = new Date(targetArr[0]['#date+start']);
+        var endDate = new Date(targetArr[0]['#date+end']);
+        var mthDiff = monthDiff(startDate, endDate);
+        var spanType = (targetArr[0]['#meta+monthly']=='TRUE') ? 'Monthly' : 'Cumulative';
+        var targetSpan = (targetArr[0]['#meta+monthly']=='TRUE') ? '' : '(over ' + mthDiff + ' mths)';
 
-        //create data structure for bar charts
+        //get target values
+        var valueTargetArray = ['Target'];
+        var targetVal = 0;
+        if (targetArr[0]['#meta+monthly']=='TRUE') {
+            var lastDate = new Date();
+            var total = 0;
+            var first = true;
+            targetArr.forEach(function(value, index) {
+                if (first) {
+                    lastDate = value['#date+start'];
+                    first = false;
+                }
+                if (value['#date+start'].getTime() != lastDate.getTime()) {
+                    lastDate = value['#date+start'];
+                    valueTargetArray.push(total);
+                    targetVal += Number(total);
+                    total = 0;
+                }
+                total += value['#targeted'];
+            });
+            //add last total to array
+            valueTargetArray.push(total);
+            targetVal += Number(total);
+        }
+        else {
+            for (var j=0; j<mthDiff; j++) {
+                valueTargetArray.push(targetGroupByIndicator[i].value);
+                targetVal += Number(targetGroupByIndicator[i].value);
+            }
+        }
+
+        //get progress values
         var indicatorArr = progressIndicatorDim.filter(currentIndicator).top(Infinity).sort(date_sort);
         var dateArray = ['x'];
         var valueReachedArray = ['Reached'];
-        var valueTargetArray = ['Target'];
         var lastDate = new Date();
         var total = 0;
         var first = true;
         var reachedVal = 0;
         indicatorArr.forEach(function(value, index) {
             if (first) {
-                lastDate = value['#date+year'];
+                lastDate = value['#date'];
                 dateArray.push(lastDate);
                 first = false;
             }
-            if (value['#date+year'].getTime() != lastDate.getTime()) {
-                lastDate = value['#date+year'];
+            if (value['#date'].getTime() != lastDate.getTime()) {
+                lastDate = value['#date'];
                 valueReachedArray.push(total);
                 reachedVal += Number(total);
-                valueTargetArray.push(targetGroupByIndicator[i].value);
                 dateArray.push(lastDate);
                 total = 0;
             }
@@ -124,23 +152,19 @@ function generateCharts(targetData, progressData){
         //add last total to array
         valueReachedArray.push(total);
         reachedVal += Number(total);
-        valueTargetArray.push(targetGroupByIndicator[i].value);
 
         //create key stats
-        $('.graphs').append('<div class="col-md-4" id="indicator' + i + '"><div class="header"><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><span class="num targetNum">'+ formatComma(targetGroupByIndicator[i].value*targetSpan) +'</span> targeted <span class="small">(over ' + targetSpan + ' mths)</span><br><span class="num reachedNum">' + formatComma(reachedVal) + '</span> reached<div class="timespan text-center small">(' + spanType + ')</div><div id="chart' + i + '" class="chart"></div></div>');
+        $('.graphs').append('<div class="col-md-4" id="indicator' + i + '"><div class="header"><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><span class="num targetNum">' + formatComma(targetVal) + '</span> targeted <span class="small">' + targetSpan + '</span><br><span class="num reachedNum">' + formatComma(reachedVal) + '</span> reached<div class="timespan text-center small">(' + spanType + ')</div><div id="chart' + i + '" class="chart"></div></div>');
 
         //create bar charts
-        var chartType = (spanType.toLowerCase() == 'monthly') ? 'bar' : 'line';
+        var chartType = 'line';
         var chart = c3.generate({
             bindto: '#chart'+i,
             size: { height: 200 },
             data: {
                 x: 'x',
-                columns: [ dateArray, valueReachedArray, valueTargetArray ],
                 type: chartType,
-                types: {
-                    Target: 'line'
-                },
+                columns: [ dateArray, valueReachedArray, valueTargetArray ],
                 colors: {
                     Target: '#F2645A',
                     Reached: '#007CE0'
@@ -162,14 +186,10 @@ function generateCharts(targetData, progressData){
                         format: d3.format('.2s')
                     },
                     min: 0,
-                    padding : {
-                        bottom : 0
-                    }
+                    padding: { bottom : 0 }
                 }
             },
-            padding: {
-                right: 20
-            }
+            padding: { right: 20 }
         });
 
         //store reference to chart
@@ -188,8 +208,8 @@ function updateCharts(region) {
         targetArr.forEach(function(value, index) {
             if (value['#adm1+name'] == region || region == '') {
                 targetedVal += Number(value['#targeted']);
-                startDate = new Date(value['#date+start+year']);
-                endDate = new Date(value['#date+end+year']);
+                startDate = new Date(value['#date+start']);
+                endDate = new Date(value['#date+end']);
             }
         });
         var targetSpan = monthDiff(startDate, endDate);
@@ -206,12 +226,12 @@ function updateCharts(region) {
         indicatorArr.forEach(function(value, index) {
             if (indicatorArr[index]['#adm1+name'] == region || region == '') {
                 if (first) {
-                    lastDate = value['#date+year'];
+                    lastDate = value['#date'];
                     dateArray.push(lastDate);
                     first = false;
                 }
-                if (value['#date+year'].getTime() != lastDate.getTime()) {
-                    lastDate = value['#date+year'];
+                if (value['#date'].getTime() != lastDate.getTime()) {
+                    lastDate = value['#date'];
                     valueReachedArray.push(total);
                     reachedVal += Number(total);
                     valueTargetArray.push(targetedVal);
@@ -248,11 +268,10 @@ function generateMap(adm1){
 
     var width = $('#map').width();
     var height = 400;
-    //map.zoom = d3.behavior.zoom().scaleExtent([1, 8]).on('zoom', map.zoomMap);
+
     mapsvg = d3.select('#map').append('svg')
         .attr('width', width)
-        .attr('height', height)
-        //.call(map.zoom);
+        .attr('height', height);
 
     var mapprojection = d3.geo.mercator()
         .center([48, 5])
@@ -276,13 +295,16 @@ function generateMap(adm1){
     var maptip = d3.select('#map').append('div').attr('class', 'd3-tip map-tip hidden');
     path
         .on('mousemove', function(d,i) {
+            $(this).attr('fill', '#F2645A');
             var mouse = d3.mouse(mapsvg.node()).map( function(d) { return parseInt(d); } );
             maptip
                 .classed('hidden', false)
-                .attr('style', 'left:'+(mouse[0]+20)+'px;top:'+(mouse[1]+20)+'px')
+                .attr('style', 'left:'+(mouse[0]+20)+'px; top:'+(mouse[1]+20)+'px')
                 .html(d.properties.admin1Name)
         })
         .on('mouseout',  function(d,i) {
+            if (!$(this).data('selected'))
+                $(this).attr('fill', '#FFFFFF');
             maptip.classed('hidden', true)
         })
         .on('click', function(d,i){
@@ -293,8 +315,10 @@ function generateMap(adm1){
 }
 
 function selectRegion(region, name) {
+    region.siblings().data('selected', false);
     region.siblings().attr('fill', '#FFFFFF');
     region.attr('fill', '#F2645A');
+    region.data('selected', true);
     $('.regionLabel > div > strong').html(name);
     updateCharts(name);
 }
@@ -306,26 +330,6 @@ function reset() {
     return false;
 }
 
-function centerMap(d) {
-  var x = 0,
-      y = 0;
-
-  // If the click was on the centered state or the background, re-center.
-  // Otherwise, center the clicked-on state.
-  if (!d || centered === d) {
-    centered = null;
-  } else {
-    var centroid = path.centroid(d);
-    x = width / 2 - centroid[0];
-    y = height / 2 - centroid[1];
-    centered = d;
-  }
-
-  // Transition to the new transform.
-  g.transition()
-      .duration(750)
-      .attr("transform", "translate(" + x + "," + y + ")");
-}
 
 var adm1Call = $.ajax({ 
     type: 'GET', 
@@ -346,8 +350,8 @@ var progressCall = $.ajax({
 });
 
 $.when(targetCall, progressCall).then(function(targetArgs, progressArgs){
-    var targetData = parseTargetDates(['#date+start+year'],['#date+end+year'], (hxlProxyToJSON(targetArgs[0])));
-    var progressData = parseDates(['#date+month'],['#date+year'],(hxlProxyToJSON(progressArgs[0])));
+    var targetData = parseDates([['#date+start'],['#date+end']], (hxlProxyToJSON(targetArgs[0])));
+    var progressData = parseDates(['#date'],(hxlProxyToJSON(progressArgs[0])));
     generateCharts(targetData, progressData);
 });
 
