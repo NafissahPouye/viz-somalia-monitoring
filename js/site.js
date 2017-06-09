@@ -154,7 +154,7 @@ function generateCharts(targetData, progressData){
         reachedVal += Number(total);
 
         //create key stats
-        $('.graphs').append('<div class="col-md-4" id="indicator' + i + '"><div class="header"><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><span class="num targetNum">' + formatComma(targetVal) + '</span> Targeted <span class="small">' + targetSpan + '</span><br><span class="num reachedNum">' + formatComma(reachedVal) + '</span> Reached<div class="timespan text-center small">(' + spanType + ')</div><div id="chart' + i + '" class="chart"></div></div>');
+        $('.graphs').append('<div class="col-sm-6 col-md-4" id="indicator' + i + '"><div class="header"><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><span class="num targetNum">' + formatComma(targetVal) + '</span> Targeted <span class="small">' + targetSpan + '</span><br><span class="num reachedNum">' + formatComma(reachedVal) + '</span> Reached<div class="timespan text-center small">(' + spanType + ')</div><div id="chart' + i + '" class="chart"></div></div>');
 
         //create bar charts
         var chartType = 'line';
