@@ -1,23 +1,57 @@
+/**** FONTS ****/
+@font-face {
+  font-family: 'Gotham-Bold';
+  src: url("../fonts/Gotham-Bold.eot");
+  src: url("../fonts/Gotham-Bold.woff") format("woff");
+  font-style: normal;
+  font-stretch: normal; 
+}
+
+@font-face {
+  font-family: 'Gotham-Light';
+  src: url("../fonts/Gotham-Light.eot");
+  src: url("../fonts/Gotham-Light.woff") format("woff");
+  font-style: normal;
+  font-stretch: normal; 
+}
+
+@font-face {
+  font-family: 'SourceSansPro-Regular';
+  src: url("../fonts/SourceSansPro-Regular.eot");
+  src: url("../fonts/SourceSansPro-Regular.woff") format("woff");
+  font-style: normal;
+  font-stretch: normal; 
+}
+
+/**** ELEMENTS ****/
 .container{
-	margin: 20px;
+	margin: 20px auto;
+}
+body {
+	font-family: 'SourceSansPro-Regular';
 }
 h1 {
+	font-family: 'Gotham-Bold';
 	font-size: 20px;
 	margin-top: 0;
 }
 h3{
+	font-family: 'SourceSansPro-Regular';
 	font-size: 14px;
 	font-weight: normal;
 	margin-top: 0;
 }
 h4{
+	font-family: 'Gotham-Bold';
 	font-size: 12px;
-	font-weight: bold;
 	margin-bottom: 5px;
 	text-transform: uppercase;
 }
 a {
 	text-decoration: underline;
+}
+strong {
+	font-family: 'Gotham-Bold';
 }
 .small{
 	font-size: 12px;
@@ -28,7 +62,7 @@ a {
 	min-height: 420px;
 }
 .header {
-	min-height: 80px;
+	min-height: 65px;
 }
 .text-center {
 	text-align: center;
@@ -37,7 +71,8 @@ a {
 	margin-top: 20px;
 }
 span.num{
-	font-size: 24px;
+	font-family: 'Gotham-Light';
+	font-size: 30px;
 	font-weight: 700;
 }
 .map-container {
@@ -61,7 +96,6 @@ span.num{
 #adm1layer path {
 	cursor: pointer;
 }
-
 .regionLabel {
 	position: absolute;
 	z-index: 2;
@@ -69,7 +103,10 @@ span.num{
 	right: 20px;
 	text-align: right;
 }
-
-@media (min-width: 768px){
-
+.c3-legend-item,
+.c3-axis {
+	font-family: 'SourceSansPro-Regular';
 }
+
+
+
