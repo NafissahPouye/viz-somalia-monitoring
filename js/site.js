@@ -92,13 +92,13 @@ function generateCharts(targetData, progressData){
         var startDate = new Date(targetArr[0]['#date+start']);
         var endDate = new Date(targetArr[0]['#date+end']);
         var mthDiff = monthDiff(startDate, endDate);
-        var spanType = (targetArr[0]['#meta+monthly']=='TRUE') ? 'Monthly' : 'Cumulative';
-        var targetSpan = (targetArr[0]['#meta+monthly']=='TRUE') ? '' : '(over ' + mthDiff + ' mths)';
+        var spanType = targetArr[0]['#meta+cumulative'];
+        var targetSpan = (spanType.toLowerCase()=='per month') ? '' : '(over ' + mthDiff + ' mths)';
 
         //get target values
         var valueTargetArray = ['Target'];
         var targetVal = 0;
-        if (targetArr[0]['#meta+monthly']=='TRUE') {
+        if (spanType.toLowerCase()=='per month') {
             var lastDate = new Date();
             var total = 0;
             var first = true;
@@ -217,7 +217,7 @@ function updateCharts(region) {
         //get target values
         var valueTargetArray = ['Target'];
         var targetVal = 0;
-        if (targetArr[0]['#meta+monthly']=='TRUE') {
+        if (targetArr[0]['#meta+cumulative'].toLowerCase()=='per month') {
             var lastDate = new Date();
             var total = 0;
             var first = true;
