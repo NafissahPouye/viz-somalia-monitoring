@@ -50,11 +50,14 @@ a {
 strong {
 	font-family: 'Gotham-Bold';
 }
-.container{
-	margin: 20px 0;
+.text-center {
+	text-align: center;
 }
 .small{
 	font-size: 12px;
+}
+.container{
+	margin: 20px 0;
 }
 .graphs {
 	margin-left: -15px;
@@ -68,13 +71,10 @@ strong {
 .header {
 	min-height: 65px;
 }
-.text-center {
-	text-align: center;
-}
 .timespan {
 	margin-top: 20px;
 }
-span.num{
+.num{
 	font-family: 'Gotham-Light';
 	font-size: 30px;
 	font-weight: 700;
@@ -86,6 +86,9 @@ span.num{
 	border: 1px solid #ccc;
 	margin-bottom: 10px;
 }
+.map-tip{
+  position: absolute;
+}
 .d3-tip {
     padding:5px;
     background-color:white;
@@ -93,9 +96,6 @@ span.num{
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
     border-radius: 5px;
     font-size:1em;
-}
-.map-tip{
-  position: absolute;
 }
 #adm1layer path {
 	cursor: pointer;
