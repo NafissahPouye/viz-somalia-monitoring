@@ -204,12 +204,14 @@ function updateCharts(region) {
         var targetArr = targetIndicatorDim.filter(targetGroupByIndicator[i].key).top(Infinity);
         var targetedVal = 0, 
             startDate,
-            endDate;
+            endDate,
+            mthDiff;
         targetArr.forEach(function(value, index) {
             if (value['#adm1+name'] == region || region == '') {
                 targetedVal += Number(value['#targeted']);
                 startDate = new Date(value['#date+start']);
                 endDate = new Date(value['#date+end']);
+                mthDiff = monthDiff(startDate, endDate);
             }
         });
         //var targetSpan = monthDiff(startDate, endDate);
@@ -303,9 +305,10 @@ function generateMap(adm1){
         .attr('width', width)
         .attr('height', height);
 
+    var mapscale = ($('body').width()<768) ? width*4 : width*2;
     var mapprojection = d3.geo.mercator()
-        .center([48, 5])
-        .scale(width*2)
+        .center([47, 5])
+        .scale(mapscale)
         .translate([width / 2, height / 2]);    
 
     var g = mapsvg.append('g').attr('id','adm1layer');
