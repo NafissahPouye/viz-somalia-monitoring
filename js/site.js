@@ -214,7 +214,6 @@ function updateCharts(region) {
                 mthDiff = monthDiff(startDate, endDate);
             }
         });
-        //var targetSpan = monthDiff(startDate, endDate);
 
         //get target values
         var valueTargetArray = ['Target'];
@@ -244,8 +243,7 @@ function updateCharts(region) {
         }
         else {
             for (var j=0; j<mthDiff; j++) {
-                valueTargetArray.push(targetGroupByIndicator[i].value);
-                targetVal += Number(targetGroupByIndicator[i].value);
+                valueTargetArray.push(targetedVal);
             }
         }
 
@@ -279,7 +277,7 @@ function updateCharts(region) {
         reachedVal += Number(total);
 
         //update key stats
-        $('#indicator'+i).find('.targetNum').html(formatComma(targetedVal));
+        $('#indicator'+i).find('.targetNum').html(formatComma(targetedVal*mthDiff));
         $('#indicator'+i).find('.reachedNum').html(formatComma(reachedVal));
 
         //update bar charts
