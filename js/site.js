@@ -56,7 +56,7 @@ function monthDiff(d1, d2) {
     return d2.getMonth() - d1.getMonth() + 1;
 }
 
-var formatComma = d3.format('.2s');
+var formatComma = d3.format(',');
 var targetcf, 
     progresscf,
     targetIndicatorDim,
@@ -93,7 +93,7 @@ function generateCharts(targetData, progressData){
         var endDate = new Date(targetArr[0]['#date+end']);
         var mthDiff = monthDiff(startDate, endDate);
         var spanType = targetArr[0]['#meta+cumulative'];
-        var targetSpan = (spanType.toLowerCase()=='per month') ? '' : '(over ' + mthDiff + ' mths)';
+        //var targetSpan = (spanType.toLowerCase()=='per month') ? '' : '(over ' + mthDiff + ' mths)';
 
         //get target values
         var valueTargetArray = ['Target'];
@@ -122,7 +122,8 @@ function generateCharts(targetData, progressData){
         else {
             for (var j=0; j<mthDiff; j++) {
                 valueTargetArray.push(targetGroupByIndicator[i].value);
-                targetVal += Number(targetGroupByIndicator[i].value);
+                //targetVal += Number(targetGroupByIndicator[i].value)
+                targetVal = Number(targetGroupByIndicator[i].value);
             }
         }
 
@@ -153,8 +154,9 @@ function generateCharts(targetData, progressData){
         valueReachedArray.push(total);
         reachedVal += Number(total);
 
+        var sectorIcon = currentSector.toLowerCase().replace(/ /g, '').split('(')[0];
         //create key stats
-        $('.graphs').append('<div class="col-sm-6 col-md-4" id="indicator' + i + '"><div class="header"><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><span class="num targetNum">' + formatComma(targetVal) + '</span> Targeted <span class="small">' + targetSpan + '</span><br><span class="num reachedNum">' + formatComma(reachedVal) + '</span> Reached<div class="timespan text-center small">(' + spanType + ')</div><div id="chart' + i + '" class="chart"></div></div>');
+        $('.graphs').append('<div class="col-sm-6 col-md-4" id="indicator' + i + '"><div class="header '+sectorIcon+'"><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><div class="chart-container"><div class="keystat"><div class="num targetNum">' + formatComma(targetVal) + '</div> Targeted</div><div class="keystat"><div class="num reachedNum">' + formatComma(reachedVal) + '</div> Reached</div><div class="timespan text-center small">(' + spanType + ')</div><div id="chart' + i + '" class="chart"></div></div></div>');
 
         //create bar charts
         var chartType = 'line';
@@ -166,8 +168,8 @@ function generateCharts(targetData, progressData){
                 type: chartType,
                 columns: [ dateArray, valueReachedArray, valueTargetArray ],
                 colors: {
-                    Target: '#F2645A',
-                    Reached: '#007CE0'
+                    Target: '#659ad2',
+                    Reached: '#f47933'
                 }
             },
             axis: {
@@ -189,7 +191,7 @@ function generateCharts(targetData, progressData){
                     padding: { bottom : 0 }
                 }
             },
-            padding: { right: 20 }
+            padding: { right: 40 }
         });
 
         //store reference to chart
@@ -277,7 +279,7 @@ function updateCharts(region) {
         reachedVal += Number(total);
 
         //update key stats
-        $('#indicator'+i).find('.targetNum').html(formatComma(targetedVal*mthDiff));
+        $('#indicator'+i).find('.targetNum').html(formatComma(targetedVal));//*mthDiff
         $('#indicator'+i).find('.reachedNum').html(formatComma(reachedVal));
 
         //update bar charts
@@ -291,6 +293,8 @@ function updateCharts(region) {
 
 var mapsvg,
     centered;
+var fillColor = 'rgba(199,214,235,0.5)';//'#c7d6ee';
+var hoverColor = '#f47933';
 function generateMap(adm1){
     //remove loader and show map
     $('.sp-circle').remove();
@@ -315,9 +319,9 @@ function generateMap(adm1){
         .append('path')
         .attr('d', d3.geo.path().projection(mapprojection))
         .attr('class','adm1')
-        .attr('fill', '#FFFFFF')
-        .attr('stroke-width', 2)
-        .attr('stroke','#AAAAAA')
+        .attr('fill', fillColor)
+        .attr('stroke-width', 1)
+        .attr('stroke','#a7a9ac')
         .attr('id',function(d){
             return d.properties.admin1Name;
         });
@@ -326,7 +330,7 @@ function generateMap(adm1){
     var maptip = d3.select('#map').append('div').attr('class', 'd3-tip map-tip hidden');
     path
         .on('mousemove', function(d,i) {
-            $(this).attr('fill', '#F2645A');
+            $(this).attr('fill', hoverColor);
             var mouse = d3.mouse(mapsvg.node()).map( function(d) { return parseInt(d); } );
             maptip
                 .classed('hidden', false)
@@ -335,7 +339,7 @@ function generateMap(adm1){
         })
         .on('mouseout',  function(d,i) {
             if (!$(this).data('selected'))
-                $(this).attr('fill', '#FFFFFF');
+                $(this).attr('fill', fillColor);
             maptip.classed('hidden', true)
         })
         .on('click', function(d,i){
@@ -347,15 +351,15 @@ function generateMap(adm1){
 
 function selectRegion(region, name) {
     region.siblings().data('selected', false);
-    region.siblings().attr('fill', '#FFFFFF');
-    region.attr('fill', '#F2645A');
+    region.siblings().attr('fill', fillColor);
+    region.attr('fill', hoverColor);
     region.data('selected', true);
     $('.regionLabel > div > strong').html(name);
     updateCharts(name);
 }
 
 function reset() {
-    $('#adm1layer').children().attr('fill', '#FFFFFF');
+    $('#adm1layer').children().attr('fill', fillColor);
     $('.regionLabel > div > strong').html('All Regions');
     updateCharts('');
     return false;
