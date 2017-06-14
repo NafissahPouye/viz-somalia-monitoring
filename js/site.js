@@ -191,7 +191,7 @@ function generateCharts(targetData, progressData){
                     padding: { bottom : 0 }
                 }
             },
-            padding: { right: 40 }
+            padding: { right: 35 }
         });
 
         //store reference to chart

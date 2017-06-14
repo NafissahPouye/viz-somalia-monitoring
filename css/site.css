@@ -59,10 +59,6 @@ strong {
 .container{
 	margin: 20px 0;
 }
-.graphs {
-	margin-left: -15px;
-	margin-right: -15px;
-}
 .graphs > div {
 	margin-bottom: 15px;
 	min-height: 420px;
@@ -123,7 +119,7 @@ strong {
 }
 #map {
 	border: 1px solid #a7a9ac;
-	margin-bottom: 10px;
+	margin-bottom: 30px;
 }
 .map-tip{
   position: absolute;
@@ -143,7 +139,7 @@ strong {
 	position: absolute;
 	z-index: 2;
 	top: 20px;
-	right: 20px;
+	right: 35px;
 	text-align: right;
 }
 .c3-legend-item,
@@ -155,12 +151,9 @@ strong {
 	.container{
 		margin: 20px auto;
 	}
-	.graphs {
-		margin-left: 0;
-	}
 	.keystat {
 		text-align: right;
-		width: 65%;
+		width: 64%;
 	}
 }
 
