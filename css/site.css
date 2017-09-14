@@ -53,6 +53,16 @@ a {
 strong {
 	font-family: 'Gotham-Bold';
 }
+.icon-ocha {
+	color: #046bb5;
+	font-size: 24px;
+	left: 25px;
+	position: absolute;
+	top: 10px;
+}
+.icon-education {
+	font-size: 18px;
+}
 .text-center {
 	text-align: center;
 }
@@ -79,32 +89,14 @@ strong {
     background-repeat: no-repeat;
     background-position: 8px 8px;
 }
-.header.education {
-	background-image: url('../icons/education.png');
-}
-.header.foodsecuritycluster {
-	background-image: url('../icons/foodsecuritycluster.png');
-}
-.header.health {
-	background-image: url('../icons/health.png');
-}
-.header.nutrition {
-	background-image: url('../icons/nutrition.png');
-}
-.header.protection {
-	background-image: url('../icons/protection.png');
-}
-.header.shelter {
-	background-image: url('../icons/shelter.png');
-}
-.header.wash {
-	background-image: url('../icons/wash.png');
-}
 .header h4 {
 	color: #fff;
 }
 .timespan {
 	margin-top: 20px;
+}
+.keystat-container {
+	min-height: 84px;
 }
 .keystat {
 	text-align: right;
@@ -119,10 +111,10 @@ strong {
 }
 .map-container {
 	display: none;
+	margin-bottom: 30px;
 }
 #map {
-	border: 1px solid #a7a9ac;
-	margin-bottom: 30px;
+	background-color: #b5d0d0;
 }
 .map-tip{
   position: absolute;
@@ -138,12 +130,19 @@ strong {
 #adm1layer path {
 	cursor: pointer;
 }
+#adm1layer path.inactive {
+	cursor: default;
+}
 .regionLabel {
 	position: absolute;
 	z-index: 2;
-	top: 20px;
+	bottom: 20px;
 	right: 35px;
 	text-align: right;
+}
+.countryLabel {
+	fill: #333;
+	font-size: 10px;
 }
 .c3-legend-item,
 .c3-axis {
@@ -157,6 +156,9 @@ strong {
 	.keystat {
 		text-align: right;
 		width: 64%;
+	}
+	.regionLabel {
+		bottom: 65px;
 	}
 }
 
