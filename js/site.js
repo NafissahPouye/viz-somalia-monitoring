@@ -515,7 +515,7 @@ $.when(targetCall, progressCall, keyfigureTargetCall, keyfigureProgressCall).the
 
 $.when(adm1Call, somCall, countrieslabelCall).then(function(adm1Args, somArgs, countrieslabelArgs){
     //var adm1 = topojson.feature(adm1Args[0],adm1Args[0].objects.som_adm1);
-    var som = topojson.feature(somArgs[0],somArgs[0].objects.som_merged);
+    // var som = topojson.feature(somArgs[0],somArgs[0].objects.som_merged);
     var countrieslabel = countrieslabelArgs[0].countries;
-    generateMap(som, countrieslabel);
+    generateMap(somArgs[0], countrieslabel);
 });
