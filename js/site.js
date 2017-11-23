@@ -108,142 +108,144 @@ function generateCharts(targetData, progressData, keyfigureTargetData, keyfigure
     keyfigureProgressGroupByIndicator = keyfigureProgressIndicatorDim.group().reduceSum(function(d){return d['#value']; }).all();
 
     for (var i=0; i<targetGroupByIndicator.length; i++) {
-        //create data structure for target line
-        var currentSector = targetGroupByIndicator[i].key.split('|')[0];
-        var currentIndicator = targetGroupByIndicator[i].key.split('|')[1];
-        var targetArr = targetIndicatorDim.filter(targetGroupByIndicator[i].key).top(Infinity).sort(target_date_sort);
-        var startDate = new Date(targetArr[0]['#date+start']);
-        var endDate = new Date(targetArr[0]['#date+end']);
-        var mthDiff = monthDiff(startDate, endDate);
-        var spanType = targetArr[0]['#meta+cumulative'];
-        var dateRange = '';
-        switch(spanType.toLowerCase()) {
-            case 'per month':
-                dateRange = (targetArr[0]['#date+end']!=null) ? ' as of ' + getMonthName(endDate.getMonth()) : '';
-                break;
-            case 'monthly':
-                dateRange = ' as of ' + getMonthName(endDate.getMonth());
-                break;
-            default:
-                dateRange = ' ' + getMonthName(startDate.getMonth()) + ' to ' + getMonthName(endDate.getMonth());
-        }
-
-        var keyfigureTarg = '';
-        keyfigureTargetGroupByIndicator.forEach(function(obj, index) { 
-            if (obj.key == targetGroupByIndicator[i].key) {
-                keyfigureTarg = obj.value;
+        if (targetGroupByIndicator[i].key.length>1) {
+            //create data structure for target line
+            var currentSector = targetGroupByIndicator[i].key.split('|')[0];
+            var currentIndicator = targetGroupByIndicator[i].key.split('|')[1];
+            var targetArr = targetIndicatorDim.filter(targetGroupByIndicator[i].key).top(Infinity).sort(target_date_sort);
+            var startDate = new Date(targetArr[0]['#date+start']);
+            var endDate = new Date(targetArr[0]['#date+end']);
+            var mthDiff = monthDiff(startDate, endDate);
+            var spanType = targetArr[0]['#meta+cumulative'];
+            var dateRange = '';
+            switch(spanType.toLowerCase()) {
+                case 'per month':
+                    dateRange = (targetArr[0]['#date+end']!=null) ? ' as of ' + getMonthName(endDate.getMonth()) : '';
+                    break;
+                case 'monthly':
+                    dateRange = ' as of ' + getMonthName(endDate.getMonth());
+                    break;
+                default:
+                    dateRange = ' ' + getMonthName(startDate.getMonth()) + ' to ' + getMonthName(endDate.getMonth());
             }
-        });
-        var keyfigureProg = '';
-        keyfigureProgressGroupByIndicator.forEach(function(obj, index) { 
-            if (obj.key == currentIndicator) {
-                keyfigureProg = obj.value;
-            }
-        });
 
-        //get target values
-        var valueTargetArray = ['Target'];
-        var targetVal = 0;
-        if (spanType.toLowerCase()=='per month') {
+            var keyfigureTarg = '';
+            keyfigureTargetGroupByIndicator.forEach(function(obj, index) { 
+                if (obj.key == targetGroupByIndicator[i].key) {
+                    keyfigureTarg = obj.value;
+                }
+            });
+            var keyfigureProg = '';
+            keyfigureProgressGroupByIndicator.forEach(function(obj, index) { 
+                if (obj.key == currentIndicator) {
+                    keyfigureProg = obj.value;
+                }
+            });
+
+            //get target values
+            var valueTargetArray = ['Target'];
+            var targetVal = 0;
+            if (spanType.toLowerCase()=='per month') {
+                var lastDate = new Date();
+                var total = 0;
+                var first = true;
+                targetArr.forEach(function(value, index) {
+                    if (first) {
+                        lastDate = value['#date+start'];
+                        first = false;
+                    }
+                    if (value['#date+start'].getTime() != lastDate.getTime()) {
+                        lastDate = value['#date+start'];
+                        valueTargetArray.push(total);
+                        targetVal += Number(total);
+                        total = 0;
+                    }
+                    total += value['#targeted'];
+                });
+                //add last total to array
+                valueTargetArray.push(total);
+            }
+            else {
+                for (var j=0; j<mthDiff; j++) {
+                    valueTargetArray.push(targetGroupByIndicator[i].value);
+                }
+            }
+
+            //get progress values
+            var indicatorArr = progressIndicatorDim.filter(currentIndicator).top(Infinity).sort(date_sort);
+            var dateArray = ['x'];
+            var valueReachedArray = ['Reached'];
             var lastDate = new Date();
             var total = 0;
             var first = true;
-            targetArr.forEach(function(value, index) {
+            indicatorArr.forEach(function(value, index) {
                 if (first) {
-                    lastDate = value['#date+start'];
+                    lastDate = value['#date'];
+                    dateArray.push(lastDate);
                     first = false;
                 }
-                if (value['#date+start'].getTime() != lastDate.getTime()) {
-                    lastDate = value['#date+start'];
-                    valueTargetArray.push(total);
-                    targetVal += Number(total);
+                if (value['#date'].getTime() != lastDate.getTime()) {
+                    lastDate = value['#date'];
+                    valueReachedArray.push(total);
+                    dateArray.push(lastDate);
                     total = 0;
                 }
-                total += value['#targeted'];
+                total += value['#value'];
             });
             //add last total to array
-            valueTargetArray.push(total);
-        }
-        else {
-            for (var j=0; j<mthDiff; j++) {
-                valueTargetArray.push(targetGroupByIndicator[i].value);
-            }
-        }
+            valueReachedArray.push(total);
 
-        //get progress values
-        var indicatorArr = progressIndicatorDim.filter(currentIndicator).top(Infinity).sort(date_sort);
-        var dateArray = ['x'];
-        var valueReachedArray = ['Reached'];
-        var lastDate = new Date();
-        var total = 0;
-        var first = true;
-        indicatorArr.forEach(function(value, index) {
-            if (first) {
-                lastDate = value['#date'];
-                dateArray.push(lastDate);
-                first = false;
-            }
-            if (value['#date'].getTime() != lastDate.getTime()) {
-                lastDate = value['#date'];
-                valueReachedArray.push(total);
-                dateArray.push(lastDate);
-                total = 0;
-            }
-            total += value['#value'];
-        });
-        //add last total to array
-        valueReachedArray.push(total);
+            var sectorIcon = currentSector.toLowerCase().replace(/ /g, '').split('(')[0];
+            var targClass = (keyfigureTarg <= 0) ? 'hidden' : '';
+            var reachClass = (keyfigureProg <= 0) ? 'hidden' : '';
 
-        var sectorIcon = currentSector.toLowerCase().replace(/ /g, '').split('(')[0];
-        var targClass = (keyfigureTarg <= 0) ? 'hidden' : '';
-        var reachClass = (keyfigureProg <= 0) ? 'hidden' : '';
+            //create key stats
+            $('.graphs').append('<div class="col-sm-6 col-md-4" id="indicator' + i + '"><div class="header"><i class="icon-ocha icon-'+sectorIcon+'"></i><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><div class="chart-container"><div class="keystat-container"><div class="keystat ' + targClass + '"><div class="num targetNum">' + formatComma(keyfigureTarg) + '</div> targeted</div><div class="keystat ' + reachClass + '"><div class="num reachedNum">' + formatComma(keyfigureProg) + '</div> reached</div></div><div class="timespan text-center small">(' + spanType + dateRange + ')</div><div id="chart' + i + '" class="chart"></div></div></div>');
 
-        //create key stats
-        $('.graphs').append('<div class="col-sm-6 col-md-4" id="indicator' + i + '"><div class="header"><i class="icon-ocha icon-'+sectorIcon+'"></i><h4>' + currentSector + '</h4><h3>'+  currentIndicator +'</h3></div><div class="chart-container"><div class="keystat-container"><div class="keystat ' + targClass + '"><div class="num targetNum">' + formatComma(keyfigureTarg) + '</div> targeted</div><div class="keystat ' + reachClass + '"><div class="num reachedNum">' + formatComma(keyfigureProg) + '</div> reached</div></div><div class="timespan text-center small">(' + spanType + dateRange + ')</div><div id="chart' + i + '" class="chart"></div></div></div>');
-
-        //create bar charts
-        var chartType = 'line';
-        var chart = c3.generate({
-            bindto: '#chart'+i,
-            size: { height: 200 },
-            data: {
-                x: 'x',
-                type: chartType,
-                columns: [ dateArray, valueReachedArray, valueTargetArray ],
-                colors: {
-                    Target: '#659ad2',
-                    Reached: '#f47933'
-                }
-            },
-            axis: {
-                x: {
-                    type: 'timeseries',
-                    localtime: false,
-                    tick: {
-                        centered: true,
-                        format: '%b %Y',
-                        outer: false
+            //create bar charts
+            var chartType = 'line';
+            var chart = c3.generate({
+                bindto: '#chart'+i,
+                size: { height: 200 },
+                data: {
+                    x: 'x',
+                    type: chartType,
+                    columns: [ dateArray, valueReachedArray, valueTargetArray ],
+                    colors: {
+                        Target: '#659ad2',
+                        Reached: '#f47933'
                     }
                 },
-                y: {
-                    tick: {
-                        count: 5,
-                        format: d3.format('.2s')
+                axis: {
+                    x: {
+                        type: 'timeseries',
+                        localtime: false,
+                        tick: {
+                            centered: true,
+                            format: '%b %Y',
+                            outer: false
+                        }
                     },
-                    min: 0,
-                    padding: { bottom : 0 }
-                }
-            },
-            tooltip: {
-                format: {
-                    value: d3.format(',') 
-                }
-            },
-            padding: { right: 35 }
-        });
+                    y: {
+                        tick: {
+                            count: 5,
+                            format: d3.format('.2s')
+                        },
+                        min: 0,
+                        padding: { bottom : 0 }
+                    }
+                },
+                tooltip: {
+                    format: {
+                        value: d3.format(',') 
+                    }
+                },
+                padding: { right: 35 }
+            });
 
-        //store reference to chart
-        $('#chart'+i).data('chartObj', chart);
+            //store reference to chart
+            $('#chart'+i).data('chartObj', chart);
+        }
     }
 }
 
